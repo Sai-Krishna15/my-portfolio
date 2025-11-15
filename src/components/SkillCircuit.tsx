@@ -1,5 +1,4 @@
-
-import React, { Suspense, useRef, useState, useMemo } from "react";
+import React, { Suspense, useRef, useState, useMemo, useCallback } from "react";
 import { Canvas, useFrame, type ThreeElements } from "@react-three/fiber";
 import {
   Billboard,
@@ -43,32 +42,121 @@ const KEY_SIZE: [number, number, number] = [1.5, 1, 1.5];
 
 const SKILLS: Skill[] = [
   // Row 1
-  { id: 'react', name: 'React', description: 'UI Development', Icon: SiReact, color: '#61DAFB', position: [-2.55, 0, -1.7], size: KEY_SIZE },
-  { id: 'redux', name: 'Redux', description: 'State Management', Icon: SiRedux, color: '#764ABC', position: [-0.85, 0, -1.7], size: KEY_SIZE },
-  { id: 'javascript', name: 'JavaScript', description: 'Core Language', Icon: SiJavascript, color: '#F7DF1E', position: [0.85, 0, -1.7], size: KEY_SIZE },
-  { id: 'tailwind', name: 'Tailwind CSS', description: 'CSS Framework', Icon: SiTailwindcss, color: '#06B6D4', position: [2.55, 0, -1.7], size: KEY_SIZE },
+  {
+    id: "react",
+    name: "React",
+    description: "UI Development",
+    Icon: SiReact,
+    color: "#61DAFB",
+    position: [-2.55, 0, -1.7],
+    size: KEY_SIZE,
+  },
+  {
+    id: "redux",
+    name: "Redux",
+    description: "State Management",
+    Icon: SiRedux,
+    color: "#764ABC",
+    position: [-0.85, 0, -1.7],
+    size: KEY_SIZE,
+  },
+  {
+    id: "javascript",
+    name: "JavaScript",
+    description: "Core Language",
+    Icon: SiJavascript,
+    color: "#F7DF1E",
+    position: [0.85, 0, -1.7],
+    size: KEY_SIZE,
+  },
+  {
+    id: "tailwind",
+    name: "Tailwind CSS",
+    description: "CSS Framework",
+    Icon: SiTailwindcss,
+    color: "#06B6D4",
+    position: [2.55, 0, -1.7],
+    size: KEY_SIZE,
+  },
   // Row 2
-  { id: 'nodejs', name: 'Node.js', description: 'Backend Runtime', Icon: SiNodedotjs, color: '#339933', position: [-2.55, 0, 0], size: KEY_SIZE },
-  { id: 'express', name: 'Express.js', description: 'Node.js Framework', Icon: SiExpress, color: '#ffffff', position: [-0.85, 0, 0], size: KEY_SIZE },
-  { id: 'python', name: 'Python', description: 'Versatile Language', Icon: SiPython, color: '#4169E1', position: [0.85, 0, 0], size: KEY_SIZE },
-  { id: 'mongodb', name: 'MongoDB', description: 'NoSQL Database', Icon: SiMongodb, color: '#47A248', position: [2.55, 0, 0], size: KEY_SIZE },
+  {
+    id: "nodejs",
+    name: "Node.js",
+    description: "Backend Runtime",
+    Icon: SiNodedotjs,
+    color: "#339933",
+    position: [-2.55, 0, 0],
+    size: KEY_SIZE,
+  },
+  {
+    id: "express",
+    name: "Express.js",
+    description: "Node.js Framework",
+    Icon: SiExpress,
+    color: "#ffffff",
+    position: [-0.85, 0, 0],
+    size: KEY_SIZE,
+  },
+  {
+    id: "python",
+    name: "Python",
+    description: "Versatile Language",
+    Icon: SiPython,
+    color: "#4169E1",
+    position: [0.85, 0, 0],
+    size: KEY_SIZE,
+  },
+  {
+    id: "mongodb",
+    name: "MongoDB",
+    description: "NoSQL Database",
+    Icon: SiMongodb,
+    color: "#47A248",
+    position: [2.55, 0, 0],
+    size: KEY_SIZE,
+  },
   // Row 3 (Centered)
-  { id: 'postgresql', name: 'PostgreSQL', description: 'SQL Database', Icon: SiPostgresql, color: '#4169E1', position: [-1.7, 0, 1.7], size: KEY_SIZE },
-  { id: 'redis', name: 'Redis', description: 'In-memory Cache', Icon: SiRedis, color: '#DC382D', position: [0, 0, 1.7], size: KEY_SIZE },
-  { id: 'space', name: 'And More!', description: 'DevOps, Testing, etc.', Icon: SiNodedotjs, color: '#888888', position: [1.7, 0, 1.7], size: KEY_SIZE },
+  {
+    id: "postgresql",
+    name: "PostgreSQL",
+    description: "SQL Database",
+    Icon: SiPostgresql,
+    color: "#4169E1",
+    position: [-1.7, 0, 1.7],
+    size: KEY_SIZE,
+  },
+  {
+    id: "redis",
+    name: "Redis",
+    description: "In-memory Cache",
+    Icon: SiRedis,
+    color: "#DC382D",
+    position: [0, 0, 1.7],
+    size: KEY_SIZE,
+  },
+  {
+    id: "space",
+    name: "And More!",
+    description: "DevOps, Testing, etc.",
+    Icon: SiNodedotjs,
+    color: "#888888",
+    position: [1.7, 0, 1.7],
+    size: KEY_SIZE,
+  },
 ];
-
 
 const KEY_RADIUS = 0.08;
 const KEY_SMOOTHNESS = 10;
 const KEY_DEPTH = 0.5;
 
-
 // ============================================================================
 // HELPER COMPONENTS
 // ============================================================================
 
-const SkillPopup: React.FC<{ name: string; description: string }> = ({ name, description }) => {
+const SkillPopup: React.FC<{ name: string; description: string }> = ({
+  name,
+  description,
+}) => {
   return (
     <Billboard>
       <Html position={[0, 1.5, 0]} transform center>
@@ -82,31 +170,31 @@ const SkillPopup: React.FC<{ name: string; description: string }> = ({ name, des
 };
 
 const CursorLight = () => {
-    const lightRef = useRef<THREE.PointLight>(null!);
-    const planeRef = useRef<THREE.Mesh>(null!);
+  const lightRef = useRef<THREE.PointLight>(null!);
+  const planeRef = useRef<THREE.Mesh>(null!);
 
-    useFrame((state) => {
-        if(!lightRef.current || !planeRef.current) return;
+  useFrame((state) => {
+    if (!lightRef.current || !planeRef.current) return;
 
-        const intersection = state.raycaster.intersectObject(planeRef.current);
-        if (intersection[0]) {
-            lightRef.current.position.copy(intersection[0].point);
-            lightRef.current.position.y = 0.5;
-        }
-    });
+    const intersection = state.raycaster.intersectObject(planeRef.current);
+    if (intersection[0]) {
+      lightRef.current.position.copy(intersection[0].point);
+      lightRef.current.position.y = 0.5;
+    }
+  });
 
-    return (
-        <>
-            <pointLight ref={lightRef} intensity={2} distance={5} color="#06B6D4" />
-            <mesh ref={planeRef} rotation-x={-Math.PI / 2} visible={false}>
-                <planeGeometry args={[20, 20]} />
-                <meshBasicMaterial />
-            </mesh>
-        </>
-    );
-}
+  return (
+    <>
+      <pointLight ref={lightRef} intensity={2} distance={5} color="#06B6D4" />
+      <mesh ref={planeRef} rotation-x={-Math.PI / 2} visible={false}>
+        <planeGeometry args={[20, 20]} />
+        <meshBasicMaterial />
+      </mesh>
+    </>
+  );
+};
 
-type KeyProps = ThreeElements['group'] & {
+type KeyProps = ThreeElements["group"] & {
   skill: Skill;
   isActive: boolean;
 };
@@ -133,17 +221,24 @@ const Key: React.FC<KeyProps> = ({ skill, isActive, ...props }) => {
     return color;
   }, [isHovered, isActive, skill.color]);
 
-  useFrame((state, delta) => {
-    if(!groupRef.current) return;
+  useFrame((_state, delta) => {
+    if (!groupRef.current) return;
     const targetY = isActive || isHovered ? 0.1 : 0;
     const targetScale = isActive || isHovered ? 1.1 : 1;
 
-    groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, delta * 8);
-    groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 8);
+    groupRef.current.position.y = THREE.MathUtils.lerp(
+      groupRef.current.position.y,
+      targetY,
+      delta * 8
+    );
+    groupRef.current.scale.lerp(
+      new THREE.Vector3(targetScale, targetScale, targetScale),
+      delta * 8
+    );
 
     if (htmlRef.current) {
-        const iconScale = 1 + (groupRef.current.position.y / 0.1) * 0.1;
-        htmlRef.current.style.transform = `scale(${iconScale})`;
+      const iconScale = 1 + (groupRef.current.position.y / 0.1) * 0.1;
+      htmlRef.current.style.transform = `scale(${iconScale})`;
     }
   });
 
@@ -160,21 +255,31 @@ const Key: React.FC<KeyProps> = ({ skill, isActive, ...props }) => {
         radius={KEY_RADIUS}
         smoothness={KEY_SMOOTHNESS}
       >
-        <meshStandardMaterial color={keyColor} roughness={0.3} metalness={0.4} />
+        <meshStandardMaterial
+          color={keyColor}
+          roughness={0.3}
+          metalness={0.4}
+        />
       </RoundedBox>
-        <Html
-          ref={htmlRef}
-          position={[0, KEY_DEPTH + 0.01, 0]}
-          transform
-          center
-          occlude
-          className="pointer-events-none select-none"
-        >
-          <skill.Icon
-            style={{ color: isActive || isHovered ? '#fff' : skill.color, fontSize: `${Math.min(size[0], size[5]) * 0.5}rem`, transition: 'color 0.2s' }}
-          />
-        </Html>
-      {isActive && <SkillPopup name={skill.name} description={skill.description} />}
+      <Html
+        ref={htmlRef}
+        position={[0, KEY_DEPTH + 0.01, 0]}
+        transform
+        center
+        occlude
+        className="pointer-events-none select-none"
+      >
+        <skill.Icon
+          style={{
+            color: isActive || isHovered ? "#fff" : skill.color,
+            fontSize: `${Math.min(size[0], size[2]) * 0.5}rem`,
+            transition: "color 0.2s",
+          }}
+        />
+      </Html>
+      {isActive && (
+        <SkillPopup name={skill.name} description={skill.description} />
+      )}
     </group>
   );
 };
@@ -183,23 +288,33 @@ const Key: React.FC<KeyProps> = ({ skill, isActive, ...props }) => {
 // KEYBOARD COMPONENT
 // ============================================================================
 
-const Keyboard: React.FC<{ activeSkill: Skill | null; onKeyClick: (skill: Skill | null) => void; }> = ({ activeSkill, onKeyClick }) => {
+const Keyboard: React.FC<{
+  activeSkill: Skill | null;
+  onKeyClick: (skill: Skill | null) => void;
+}> = ({ activeSkill, onKeyClick }) => {
   const groupRef = useRef<THREE.Group>(null!);
 
-  const handleKeyClick = (skill: Skill) => {
-    onKeyClick(activeSkill?.id === skill.id ? null : skill);
-  };
+  const handleKeyClick = useCallback(
+    (skill: Skill) => {
+      onKeyClick(skill);
+    },
+    [onKeyClick]
+  );
 
-  const skillKeys = useMemo(() =>
-    SKILLS.map((skill) => (
-      <Key
-        key={skill.id}
-        skill={skill}
-        position={skill.position}
-        isActive={activeSkill?.id === skill.id}
-        onClick={() => handleKeyClick(skill)}
-      />
-    )), [activeSkill, onKeyClick]);
+  // use the stable function in useMemo deps
+  const skillKeys = useMemo(
+    () =>
+      SKILLS.map((skill) => (
+        <Key
+          key={skill.id}
+          skill={skill}
+          position={skill.position}
+          isActive={activeSkill?.id === skill.id}
+          onClick={() => handleKeyClick(skill)}
+        />
+      )),
+    [activeSkill, handleKeyClick]
+  );
 
   return (
     <group ref={groupRef} rotation={[0.3, 0, 0]}>
@@ -233,12 +348,19 @@ export default function SkillCircuit() {
 
           <Environment preset="city" />
 
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+          <Stars
+            radius={100}
+            depth={50}
+            count={5000}
+            factor={4}
+            saturation={0}
+            fade
+            speed={1}
+          />
 
           <CursorLight />
 
           <Keyboard activeSkill={activeSkill} onKeyClick={setActiveSkill} />
-
         </Suspense>
       </Canvas>
     </div>
