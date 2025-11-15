@@ -1,16 +1,21 @@
 import { motion, type Variants } from "framer-motion";
 import { HeroCanvas } from "./components/HeroCanvas";
+import SkillCircuit from "./components/SkillCircuit";
+import { CustomCursor } from "./components/CustomCursor";
 import "./App.css";
 
-const skills = [
-  { group: "Core", items: ["MERN Stack", "TypeScript", "RESTful APIs"] },
+const skillHighlights = [
   {
-    group: "Experience",
-    items: ["Product Engineering", "Design Systems", "Cloud-first Delivery"],
+    title: "Front of the stack",
+    items: ["React 19 + TypeScript", "Redux Toolkit", "Tailwind CSS"],
   },
   {
-    group: "Mindset",
-    items: ["Systems Thinking", "Rapid Iteration", "Developer Experience"],
+    title: "Backbone",
+    items: ["Node & Express", "MongoDB · PostgreSQL", "Redis caching"],
+  },
+  {
+    title: "Engineering craft",
+    items: ["Scalable arch", "API design", "DX and tooling"],
   },
 ];
 
@@ -33,7 +38,10 @@ const experience = [
 
 const contactLinks = [
   { label: "Email", href: "mailto:saikrishna152002@gmail.com" },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/mohanmanisaikrishna" },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/mohanmanisaikrishna",
+  },
   { label: "GitHub", href: "https://github.com/Sai-Krishna15" },
 ];
 
@@ -49,6 +57,7 @@ const sectionVariants: Variants = {
 function App() {
   return (
     <div className="page">
+      <CustomCursor />
       <header className="nav">
         <a href="#hero" className="logo-mark">
           SK
@@ -79,7 +88,9 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              Sai Krishna builds immersive product experiences.
+              <span className="aurora-text" data-cursor="hover">
+                Sai Krishna builds immersive product experiences.
+              </span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 30 }}
@@ -143,17 +154,33 @@ function App() {
           viewport={{ once: true, amount: 0.4 }}
         >
           <div className="section-label">Skills</div>
-          <div className="skills-grid">
-            {skills.map((skillGroup) => (
-              <div key={skillGroup.group} className="skill-card">
-                <span className="skill-pill">{skillGroup.group}</span>
-                <ul>
-                  {skillGroup.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className="">
+            {/* <div className="skills-visual">
+              <SkillCircuit />
+              <p className="skills-caption">
+                Interactive skill circuit. Hover nodes to illuminate connections
+                and reveal names.
+              </p>
+            </div> */}
+            <div className="skills-grid">
+              {skillHighlights.map((skillGroup) => (
+                <div
+                  key={skillGroup.title}
+                  className="skill-card"
+                  data-cursor="hover"
+                >
+                  <span className="skill-pill">{skillGroup.title}</span>
+                  <ul>
+                    {skillGroup.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="w-full">
+            <SkillCircuit />
           </div>
         </motion.section>
 

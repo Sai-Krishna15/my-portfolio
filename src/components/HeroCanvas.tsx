@@ -78,7 +78,7 @@ function HaloParticles() {
       );
     }
     return new Float32Array(pts);
-  }, []);
+  });
 
   return (
     <points>
