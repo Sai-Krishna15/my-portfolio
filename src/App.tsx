@@ -1,7 +1,11 @@
+import { useEffect } from "react";
 import { motion, type Variants } from "framer-motion";
+import Lenis from "lenis";
 import { HeroCanvas } from "./components/HeroCanvas";
 import SkillCircuit from "./components/SkillCircuit";
 import { CustomCursor } from "./components/CustomCursor";
+import { TextReveal } from "./components/TextReveal";
+import { Magnetic } from "./components/Magnetic";
 import "./App.css";
 
 const skillHighlights = [
@@ -46,31 +50,62 @@ const contactLinks = [
 ];
 
 const sectionVariants: Variants = {
-  hidden: { opacity: 0, y: 48 },
+  hidden: { opacity: 0, y: 48, scale: 0.96 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: "easeOut" },
+    scale: 1,
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
 function App() {
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
+
   return (
     <div className="page">
       <CustomCursor />
       <header className="nav">
-        <a href="#hero" className="logo-mark">
-          SK
-        </a>
+        <Magnetic>
+          <a href="#hero" className="logo-mark">
+            SK
+          </a>
+        </Magnetic>
         <nav className="nav-links">
-          <a href="#about">About</a>
-          <a href="#skills">Skills</a>
-          <a href="#experience">Experience</a>
-          <a href="#contact">Contact</a>
+          <Magnetic>
+            <a href="#about">About</a>
+          </Magnetic>
+          <Magnetic>
+            <a href="#skills">Skills</a>
+          </Magnetic>
+          <Magnetic>
+            <a href="#experience">Experience</a>
+          </Magnetic>
+          <Magnetic>
+            <a href="#contact">Contact</a>
+          </Magnetic>
         </nav>
-        <a className="nav-cta" href="#contact">
-          Let’s talk
-        </a>
+        <Magnetic>
+          <a className="nav-cta" href="#contact">
+            Let’s talk
+          </a>
+        </Magnetic>
       </header>
 
       <main>
@@ -80,39 +115,45 @@ function App() {
               className="hero-tag"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
             >
               Software Engineer · MERN Specialist
             </motion.span>
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <span className="aurora-text" data-cursor="hover">
+
+            <div className="overflow-hidden">
+              <TextReveal className="hero-heading" delay={0.3}>
                 Sai Krishna builds immersive product experiences.
-              </span>
-            </motion.h1>
-            <motion.p
+              </TextReveal>
+            </div>
+
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
             >
-              Crafting performant interfaces and human-centric journeys for
-              modern web platforms. 3D experiments, delightful details, and
-              measurable impact — all in one portfolio.
-            </motion.p>
+              <p className="hero-subtext">
+                Crafting performant interfaces and human-centric journeys for
+                modern web platforms. 3D experiments, delightful details, and
+                measurable impact — all in one portfolio.
+              </p>
+            </motion.div>
+
             <motion.div
               className="hero-actions"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 1 }}
             >
-              <a href="#experience" className="btn btn-primary">
-                View experience
-              </a>
-              <a href="#contact" className="btn btn-ghost">
-                Collaborate
-              </a>
+              <Magnetic>
+                <a href="#experience" className="btn btn-primary">
+                  View experience
+                </a>
+              </Magnetic>
+              <Magnetic>
+                <a href="#contact" className="btn btn-ghost">
+                  Collaborate
+                </a>
+              </Magnetic>
             </motion.div>
           </div>
           <HeroCanvas />
@@ -124,11 +165,13 @@ function App() {
           variants={sectionVariants}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.3 }}
         >
           <div className="section-label">About</div>
           <div className="section-content">
-            <h2>A quick snapshot.</h2>
+            <TextReveal className="section-heading" delay={0.1}>
+              A quick snapshot.
+            </TextReveal>
             <p>
               Sai Krishna is a software engineer with 1.5 years of
               product-focused experience. From crafting elegant UI flows to
@@ -151,17 +194,10 @@ function App() {
           variants={sectionVariants}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.2 }}
         >
           <div className="section-label">Skills</div>
           <div className="">
-            {/* <div className="skills-visual">
-              <SkillCircuit />
-              <p className="skills-caption">
-                Interactive skill circuit. Hover nodes to illuminate connections
-                and reveal names.
-              </p>
-            </div> */}
             <div className="skills-grid">
               {skillHighlights.map((skillGroup) => (
                 <div
@@ -190,7 +226,7 @@ function App() {
           variants={sectionVariants}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.2 }}
         >
           <div className="section-label">Experience</div>
           <div className="timeline">
@@ -214,11 +250,13 @@ function App() {
           variants={sectionVariants}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, amount: 0.3 }}
         >
           <div className="section-label">Contact</div>
           <div className="contact-card">
-            <h2>Let’s build what’s next.</h2>
+            <TextReveal className="section-heading" delay={0.1}>
+              Let’s build what’s next.
+            </TextReveal>
             <p>
               Drop your preferred links and call-to-action here. Whether it’s a
               collaboration, new role, or simply a hello — make it easy to reach
@@ -226,14 +264,15 @@ function App() {
             </p>
             <div className="contact-links">
               {contactLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {link.label}
-                </a>
+                <Magnetic key={link.label}>
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {link.label}
+                  </a>
+                </Magnetic>
               ))}
             </div>
           </div>
@@ -244,7 +283,9 @@ function App() {
         <span>
           © {new Date().getFullYear()} Sai Krishna · Crafted with curiosity.
         </span>
-        <a href="#hero">Back to top</a>
+        <Magnetic>
+          <a href="#hero">Back to top</a>
+        </Magnetic>
       </footer>
     </div>
   );

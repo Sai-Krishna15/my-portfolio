@@ -1,13 +1,13 @@
-import React, { Suspense, useRef, useState, useMemo, useCallback } from "react";
-import { Canvas, useFrame, type ThreeElements } from "@react-three/fiber";
+import { Suspense, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Billboard,
   Environment,
-  Html,
-  OrbitControls,
+  Float,
+  Line,
   PerspectiveCamera,
-  RoundedBox,
-  Stars,
+  Text,
+  useCursor,
 } from "@react-three/drei";
 import * as THREE from "three";
 import {
@@ -21,348 +21,306 @@ import {
   SiRedis,
   SiRedux,
   SiTailwindcss,
+  SiTypescript,
+  SiDocker,
+  SiGit,
+  SiNextdotjs,
 } from "react-icons/si";
 import type { IconType } from "react-icons";
 
 // ============================================================================
-// TYPES & CONSTANTS
+// TYPES & DATA
 // ============================================================================
 
-interface Skill {
+interface SkillNode {
   id: string;
   name: string;
-  description: string;
   Icon: IconType;
   color: string;
   position: [number, number, number];
-  size: [number, number, number];
+  connections: string[]; // IDs of other nodes to connect to
 }
 
-const KEY_SIZE: [number, number, number] = [1.5, 1, 1.5];
-
-const SKILLS: Skill[] = [
-  // Row 1
+const SKILLS: SkillNode[] = [
   {
     id: "react",
     name: "React",
-    description: "UI Development",
     Icon: SiReact,
     color: "#61DAFB",
-    position: [-2.55, 0, -1.7],
-    size: KEY_SIZE,
+    position: [-2, 1, 0],
+    connections: ["redux", "nextjs", "tailwind", "javascript"],
+  },
+  {
+    id: "nextjs",
+    name: "Next.js",
+    Icon: SiNextdotjs,
+    color: "#ffffff",
+    position: [-3, -1, 1],
+    connections: ["react", "typescript"],
   },
   {
     id: "redux",
     name: "Redux",
-    description: "State Management",
     Icon: SiRedux,
     color: "#764ABC",
-    position: [-0.85, 0, -1.7],
-    size: KEY_SIZE,
+    position: [-1, 2.5, -1],
+    connections: ["react"],
+  },
+  {
+    id: "tailwind",
+    name: "Tailwind",
+    Icon: SiTailwindcss,
+    color: "#06B6D4",
+    position: [-0.5, 0.5, 1.5],
+    connections: ["react"],
   },
   {
     id: "javascript",
     name: "JavaScript",
-    description: "Core Language",
     Icon: SiJavascript,
     color: "#F7DF1E",
-    position: [0.85, 0, -1.7],
-    size: KEY_SIZE,
+    position: [0, 0, 0], // Center
+    connections: ["react", "node", "typescript"],
   },
   {
-    id: "tailwind",
-    name: "Tailwind CSS",
-    description: "CSS Framework",
-    Icon: SiTailwindcss,
-    color: "#06B6D4",
-    position: [2.55, 0, -1.7],
-    size: KEY_SIZE,
+    id: "typescript",
+    name: "TypeScript",
+    Icon: SiTypescript,
+    color: "#3178C6",
+    position: [1, -1.5, 0.5],
+    connections: ["javascript", "nextjs", "node"],
   },
-  // Row 2
   {
-    id: "nodejs",
+    id: "node",
     name: "Node.js",
-    description: "Backend Runtime",
     Icon: SiNodedotjs,
     color: "#339933",
-    position: [-2.55, 0, 0],
-    size: KEY_SIZE,
+    position: [2, 1, -0.5],
+    connections: ["javascript", "express", "mongo", "postgres"],
   },
   {
     id: "express",
-    name: "Express.js",
-    description: "Node.js Framework",
+    name: "Express",
     Icon: SiExpress,
     color: "#ffffff",
-    position: [-0.85, 0, 0],
-    size: KEY_SIZE,
+    position: [3, 2.5, 1],
+    connections: ["node"],
   },
   {
-    id: "python",
-    name: "Python",
-    description: "Versatile Language",
-    Icon: SiPython,
-    color: "#4169E1",
-    position: [0.85, 0, 0],
-    size: KEY_SIZE,
-  },
-  {
-    id: "mongodb",
+    id: "mongo",
     name: "MongoDB",
-    description: "NoSQL Database",
     Icon: SiMongodb,
     color: "#47A248",
-    position: [2.55, 0, 0],
-    size: KEY_SIZE,
+    position: [3.5, -0.5, -1],
+    connections: ["node"],
   },
-  // Row 3 (Centered)
   {
-    id: "postgresql",
+    id: "postgres",
     name: "PostgreSQL",
-    description: "SQL Database",
     Icon: SiPostgresql,
     color: "#4169E1",
-    position: [-1.7, 0, 1.7],
-    size: KEY_SIZE,
+    position: [2, -2.5, -1.5],
+    connections: ["node", "redis"],
   },
   {
     id: "redis",
     name: "Redis",
-    description: "In-memory Cache",
     Icon: SiRedis,
     color: "#DC382D",
-    position: [0, 0, 1.7],
-    size: KEY_SIZE,
+    position: [0.5, -3, 1],
+    connections: ["postgres"],
   },
   {
-    id: "space",
-    name: "And More!",
-    description: "DevOps, Testing, etc.",
-    Icon: SiNodedotjs,
-    color: "#888888",
-    position: [1.7, 0, 1.7],
-    size: KEY_SIZE,
+    id: "python",
+    name: "Python",
+    Icon: SiPython,
+    color: "#3776AB",
+    position: [-2.5, -3, -1],
+    connections: [],
+  },
+  {
+    id: "docker",
+    name: "Docker",
+    Icon: SiDocker,
+    color: "#2496ED",
+    position: [4, 0.5, 2],
+    connections: ["node", "postgres"],
+  },
+  {
+    id: "git",
+    name: "Git",
+    Icon: SiGit,
+    color: "#F05032",
+    position: [-4, 2, -2],
+    connections: [],
   },
 ];
 
-const KEY_RADIUS = 0.08;
-const KEY_SMOOTHNESS = 10;
-const KEY_DEPTH = 0.5;
-
 // ============================================================================
-// HELPER COMPONENTS
+// COMPONENTS
 // ============================================================================
 
-const SkillPopup: React.FC<{ name: string; description: string }> = ({
-  name,
-  description,
+const ConnectionLines = ({
+  skills,
+  hoveredId,
+}: {
+  skills: SkillNode[];
+  hoveredId: string | null;
 }) => {
+  const lines = useMemo(() => {
+    const l: React.ReactNode[] = [];
+    const processed = new Set<string>();
+
+    skills.forEach((skill) => {
+      skill.connections.forEach((targetId) => {
+        const target = skills.find((s) => s.id === targetId);
+        if (target) {
+          const key = [skill.id, target.id].sort().join("-");
+          if (!processed.has(key)) {
+            processed.add(key);
+            const isActive =
+              hoveredId === skill.id || hoveredId === target.id;
+
+            l.push(
+              <Line
+                key={key}
+                points={[skill.position, target.position]}
+                color={isActive ? "#fff" : "#334155"}
+                lineWidth={isActive ? 2 : 1}
+                transparent
+                opacity={isActive ? 0.6 : 0.2}
+              />
+            );
+          }
+        }
+      });
+    });
+    return l;
+  }, [skills, hoveredId]);
+
+  return <>{lines}</>;
+};
+
+const Node = ({
+  skill,
+  hoveredId,
+  setHoveredId,
+}: {
+  skill: SkillNode;
+  hoveredId: string | null;
+  setHoveredId: (id: string | null) => void;
+}) => {
+  const isHovered = hoveredId === skill.id;
+  const isNeighbor =
+    hoveredId &&
+    (skill.connections.includes(hoveredId) ||
+      SKILLS.find((s) => s.id === hoveredId)?.connections.includes(skill.id));
+
+  const isActive = isHovered || isNeighbor;
+
+  useCursor(isHovered);
+
   return (
-    <Billboard>
-      <Html position={[0, 1.5, 0]} transform center>
-        <div className="bg-slate-900/50 backdrop-blur-sm border border-cyan-400/30 rounded-lg shadow-lg px-4 py-2 text-white text-center whitespace-nowrap">
-          <h3 className="text-lg font-bold">{name}</h3>
-          <p className="text-sm text-cyan-200">{description}</p>
-        </div>
-      </Html>
-    </Billboard>
+    <group position={skill.position}>
+      <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+        {/* Icon Billboard */}
+        <Billboard position={[0, 0.6, 0]}>
+          <Text
+            fontSize={0.3}
+            color={isActive ? "#fff" : "#94a3b8"}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#000"
+          >
+            {skill.name}
+          </Text>
+        </Billboard>
+
+        {/* Node Sphere */}
+        <mesh
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            setHoveredId(skill.id);
+          }}
+          onPointerOut={() => setHoveredId(null)}
+        >
+          <icosahedronGeometry args={[0.3, 1]} />
+          <meshStandardMaterial
+            color={skill.color}
+            emissive={skill.color}
+            emissiveIntensity={isActive ? 2 : 0.5}
+            roughness={0.2}
+            metalness={0.8}
+          />
+        </mesh>
+
+        {/* Glow Halo */}
+        {isActive && (
+          <mesh scale={1.5}>
+            <sphereGeometry args={[0.3, 16, 16]} />
+            <meshBasicMaterial
+              color={skill.color}
+              transparent
+              opacity={0.15}
+              depthWrite={false}
+            />
+          </mesh>
+        )}
+      </Float>
+    </group>
   );
 };
 
-const CursorLight = () => {
-  const lightRef = useRef<THREE.PointLight>(null!);
-  const planeRef = useRef<THREE.Mesh>(null!);
-
-  useFrame((state) => {
-    if (!lightRef.current || !planeRef.current) return;
-
-    const intersection = state.raycaster.intersectObject(planeRef.current);
-    if (intersection[0]) {
-      lightRef.current.position.copy(intersection[0].point);
-      lightRef.current.position.y = 0.5;
-    }
-  });
-
-  return (
-    <>
-      <pointLight ref={lightRef} intensity={2} distance={5} color="#06B6D4" />
-      <mesh ref={planeRef} rotation-x={-Math.PI / 2} visible={false}>
-        <planeGeometry args={[20, 20]} />
-        <meshBasicMaterial />
-      </mesh>
-    </>
-  );
-};
-
-type KeyProps = ThreeElements["group"] & {
-  skill: Skill;
-  isActive: boolean;
-};
-
-const Key: React.FC<KeyProps> = ({ skill, isActive, ...props }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const ref = useRef<THREE.Mesh>(null!);
+const Constellation = () => {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const groupRef = useRef<THREE.Group>(null!);
-  const htmlRef = useRef<HTMLDivElement>(null!);
-
-  const { size = [1, 1, 1] } = skill;
-
-  const keyColor = useMemo(() => {
-    const color = new THREE.Color();
-    if (isActive) {
-      color.set(skill.color);
-    } else if (isHovered) {
-      color.set(skill.color);
-      color.multiplyScalar(1.2);
-    } else {
-      color.set(skill.color);
-      color.multiplyScalar(0.7);
-    }
-    return color;
-  }, [isHovered, isActive, skill.color]);
 
   useFrame((_state, delta) => {
-    if (!groupRef.current) return;
-    const targetY = isActive || isHovered ? 0.1 : 0;
-    const targetScale = isActive || isHovered ? 1.1 : 1;
-
-    groupRef.current.position.y = THREE.MathUtils.lerp(
-      groupRef.current.position.y,
-      targetY,
-      delta * 8
-    );
-    groupRef.current.scale.lerp(
-      new THREE.Vector3(targetScale, targetScale, targetScale),
-      delta * 8
-    );
-
-    if (htmlRef.current) {
-      const iconScale = 1 + (groupRef.current.position.y / 0.1) * 0.1;
-      htmlRef.current.style.transform = `scale(${iconScale})`;
+    // Slow rotation of the entire constellation
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.05;
     }
   });
 
   return (
-    <group
-      {...props}
-      ref={groupRef}
-      onPointerOver={() => setIsHovered(true)}
-      onPointerOut={() => setIsHovered(false)}
-    >
-      <RoundedBox
-        ref={ref}
-        args={[size[0] - 0.1, KEY_DEPTH, size[2] - 0.1]}
-        radius={KEY_RADIUS}
-        smoothness={KEY_SMOOTHNESS}
-      >
-        <meshStandardMaterial
-          color={keyColor}
-          roughness={0.3}
-          metalness={0.4}
-        />
-      </RoundedBox>
-      <Html
-        ref={htmlRef}
-        position={[0, KEY_DEPTH + 0.01, 0]}
-        transform
-        center
-        occlude
-        className="pointer-events-none select-none"
-      >
-        <skill.Icon
-          style={{
-            color: isActive || isHovered ? "#fff" : skill.color,
-            fontSize: `${Math.min(size[0], size[2]) * 0.5}rem`,
-            transition: "color 0.2s",
-          }}
-        />
-      </Html>
-      {isActive && (
-        <SkillPopup name={skill.name} description={skill.description} />
-      )}
-    </group>
-  );
-};
-
-// ============================================================================
-// KEYBOARD COMPONENT
-// ============================================================================
-
-const Keyboard: React.FC<{
-  activeSkill: Skill | null;
-  onKeyClick: (skill: Skill | null) => void;
-}> = ({ activeSkill, onKeyClick }) => {
-  const groupRef = useRef<THREE.Group>(null!);
-
-  const handleKeyClick = useCallback(
-    (skill: Skill) => {
-      onKeyClick(skill);
-    },
-    [onKeyClick]
-  );
-
-  // use the stable function in useMemo deps
-  const skillKeys = useMemo(
-    () =>
-      SKILLS.map((skill) => (
-        <Key
+    <group ref={groupRef}>
+      <ConnectionLines skills={SKILLS} hoveredId={hoveredId} />
+      {SKILLS.map((skill) => (
+        <Node
           key={skill.id}
           skill={skill}
-          position={skill.position}
-          isActive={activeSkill?.id === skill.id}
-          onClick={() => handleKeyClick(skill)}
+          hoveredId={hoveredId}
+          setHoveredId={setHoveredId}
         />
-      )),
-    [activeSkill, handleKeyClick]
-  );
-
-  return (
-    <group ref={groupRef} rotation={[0.3, 0, 0]}>
-      {skillKeys}
+      ))}
     </group>
   );
 };
 
-// ============================================================================
-// MAIN APP COMPONENT
-// ============================================================================
-
 export default function SkillCircuit() {
-  const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
-
   return (
-    <div className="w-full h-[800px] bg-black text-white">
-      <Canvas>
+    <div className="w-full h-[600px] relative">
+      <Canvas dpr={[1, 2]}>
         <Suspense fallback={null}>
-          <PerspectiveCamera makeDefault position={[0, 5, 9]} fov={60} />
-          <OrbitControls
-            enablePan={false}
-            minDistance={4}
-            maxDistance={20}
-            minPolarAngle={Math.PI / 4}
-            maxPolarAngle={Math.PI / 1.8}
-          />
+          <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={45} />
+          <color attach="background" args={["#020617"]} />
+          <fog attach="fog" args={["#020617", 10, 25]} />
 
-          <ambientLight intensity={0.3} />
-          <pointLight position={[10, 10, 10]} intensity={1.0} />
+          <ambientLight intensity={0.2} />
+          <pointLight position={[10, 10, 10]} intensity={1} />
+          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#38bdf8" />
+
+          <Constellation />
 
           <Environment preset="city" />
-
-          <Stars
-            radius={100}
-            depth={50}
-            count={5000}
-            factor={4}
-            saturation={0}
-            fade
-            speed={1}
-          />
-
-          <CursorLight />
-
-          <Keyboard activeSkill={activeSkill} onKeyClick={setActiveSkill} />
         </Suspense>
       </Canvas>
+
+      {/* Overlay Instructions */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-slate-500 text-sm pointer-events-none">
+        Hover nodes to explore connections
+      </div>
     </div>
   );
 }
