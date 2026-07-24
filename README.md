@@ -1,6 +1,7 @@
 # my-portfolio
 
 Immersive 3D personal portfolio built with React, TypeScript, Vite, React Three Fiber, and Framer Motion.
+steps to run project.
 
 ## Getting Started
 
